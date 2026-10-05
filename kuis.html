@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subnet Master - Game CIDR & IP Address</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#ecfeff',
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                            700: '#0e7490',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .animate-shake {
+            animation: shake 0.4s ease-in-out;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(6, 182, 212, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(6, 182, 212, 0.7); }
+        }
+        .glow-effect {
+            animation: pulse-glow 3s infinite;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans selection:bg-cyan-500 selection:text-slate-950">
+
+    <!-- Top Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-cyan-500/20">
+                    <i class="fa-solid fa-network-wired"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                        SUBNET MASTER
+                    </h1>
+                    <p class="text-xs text-slate-400 font-mono">CIDR & IP Arena v2.5</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <button id="soundToggleBtn" onclick="toggleSound()" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700">
+                    <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+                </button>
+                <button onclick="openHelpModal()" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors border border-slate-700" title="Panduan Subnetting">
+                    <i class="fa-solid fa-book-open"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-6 flex flex-col justify-center">
+
+        <!-- SCREEN 1: Welcome & Player Registration -->
+        <section id="welcomeScreen" class="max-w-xl mx-auto w-full bg-slate-900/90 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden backdrop-blur">
+            <div class="absolute -right-10 -top-10 w-40 h-40 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="text-center mb-6">
+                <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 mb-3">
+                    <i class="fa-solid fa-gamepad mr-1"></i> Tantangan Jaringan Komputer
+                </span>
+                <h2 class="text-2xl md:text-3xl font-bold text-white mb-2">Selamat Datang, Engineer!</h2>
+                <p class="text-slate-400 text-sm">Uji dan tingkatkan keahlian perhitungan subnetting CIDR & IP Address kamu secara interaktif.</p>
+            </div>
+
+            <form id="startForm" onsubmit="startGame(event)" class="space-y-5">
+                <div>
+                    <label for="playerNameInput" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">
+                        Nama Pengguna / Nickname
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                            <i class="fa-solid fa-user-astronaut"></i>
+                        </div>
+                        <input type="text" id="playerNameInput" required maxlength="15" placeholder="Masukkan nama kamu..."
+                            class="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-700 rounded-xl focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 text-white placeholder-slate-500 font-medium transition-all outline-none">
+                    </div>
+                </div>
+
+                <!-- Mode Selection -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">Mode Permainan</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="relative flex flex-col p-3 border border-slate-700 rounded-xl bg-slate-950/50 hover:border-slate-600 cursor-pointer transition-all">
+                            <input type="radio" name="gameMode" value="practice" checked class="peer sr-only">
+                            <div class="peer-checked:text-cyan-400 font-semibold text-sm flex items-center justify-between mb-1">
+                                <span>Latihan</span>
+                                <i class="fa-solid fa-graduation-cap"></i>
+                            </div>
+                            <span class="text-xs text-slate-400">Tanpa waktu, dilengkapi pembahasan lengkap.</span>
+                            <div class="absolute inset-0 border-2 border-transparent peer-checked:border-cyan-500 rounded-xl pointer-events-none"></div>
+                        </label>
+
+                        <label class="relative flex flex-col p-3 border border-slate-700 rounded-xl bg-slate-950/50 hover:border-slate-600 cursor-pointer transition-all">
+                            <input type="radio" name="gameMode" value="timed" class="peer sr-only">
+                            <div class="peer-checked:text-cyan-400 font-semibold text-sm flex items-center justify-between mb-1">
+                                <span>Tantangan Waktu</span>
+                                <i class="fa-solid fa-stopwatch"></i>
+                            </div>
+                            <span class="text-xs text-slate-400">Pacu waktu 60 detik, raih combo skor tinggi!</span>
+                            <div class="absolute inset-0 border-2 border-transparent peer-checked:border-cyan-500 rounded-xl pointer-events-none"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Difficulty Selection -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">Tingkat Kesulitan</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="relative text-center py-2 px-3 border border-slate-700 rounded-lg bg-slate-950/50 hover:border-slate-600 cursor-pointer text-xs font-semibold">
+                            <input type="radio" name="difficulty" value="easy" checked class="peer sr-only">
+                            <span class="text-slate-300 peer-checked:text-emerald-400">Mudah (/24 - /30)</span>
+                            <div class="absolute inset-0 border-2 border-transparent peer-checked:border-emerald-500 rounded-lg pointer-events-none"></div>
+                        </label>
+
+                        <label class="relative text-center py-2 px-3 border border-slate-700 rounded-lg bg-slate-950/50 hover:border-slate-600 cursor-pointer text-xs font-semibold">
+                            <input type="radio" name="difficulty" value="medium" class="peer sr-only">
+                            <span class="text-slate-300 peer-checked:text-amber-400">Sedang (/16 - /24)</span>
+                            <div class="absolute inset-0 border-2 border-transparent peer-checked:border-amber-500 rounded-lg pointer-events-none"></div>
+                        </label>
+
+                        <label class="relative text-center py-2 px-3 border border-slate-700 rounded-lg bg-slate-950/50 hover:border-slate-600 cursor-pointer text-xs font-semibold">
+                            <input type="radio" name="difficulty" value="hard" class="peer sr-only">
+                            <span class="text-slate-300 peer-checked:text-rose-400">Sulit (/8 - /16)</span>
+                            <div class="absolute inset-0 border-2 border-transparent peer-checked:border-rose-500 rounded-lg pointer-events-none"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-extrabold tracking-wide uppercase transition-all shadow-lg shadow-cyan-500/25 active:scale-[0.98]">
+                    Mulai Arena <i class="fa-solid fa-play ml-2"></i>
+                </button>
+            </form>
+
+            <!-- Leaderboard Mini View -->
+            <div class="mt-8 pt-6 border-t border-slate-800">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">
+                        <i class="fa-solid fa-trophy text-amber-400 mr-1"></i> Top Skor Lokal
+                    </h3>
+                    <button onclick="clearLeaderboard()" class="text-[10px] text-slate-500 hover:text-slate-300 underline">Reset</button>
+                </div>
+                <div id="miniLeaderboard" class="space-y-1.5 text-xs">
+                    <!-- Populated via JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- SCREEN 2: Gameplay Dashboard -->
+        <section id="gameScreen" class="hidden flex-col max-w-4xl mx-auto w-full gap-5">
+            
+            <!-- Stats Bar -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+                <!-- Player Profile -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-slate-800 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div>
+                        <div id="displayPlayerName" class="font-bold text-white leading-tight">Player</div>
+                        <div id="displayModeBadge" class="text-[11px] text-slate-400 font-medium">Mode Latihan</div>
+                    </div>
+                </div>
+
+                <!-- Game Counters -->
+                <div class="flex items-center space-x-6">
+                    <!-- Timer (visible in timed mode) -->
+                    <div id="timerContainer" class="hidden flex-col items-center">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Sisa Waktu</span>
+                        <span id="timerText" class="font-mono text-xl font-bold text-cyan-400">60s</span>
+                    </div>
+
+                    <!-- Combo Streak -->
+                    <div class="flex flex-col items-center">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Combo</span>
+                        <span id="comboText" class="font-mono text-xl font-bold text-amber-400">0x</span>
+                    </div>
+
+                    <!-- Total Score -->
+                    <div class="flex flex-col items-center">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Skor</span>
+                        <span id="scoreText" class="font-mono text-2xl font-black text-emerald-400">0</span>
+                    </div>
+                </div>
+
+                <!-- Quit Button -->
+                <button onclick="confirmExit()" class="text-xs text-slate-400 hover:text-rose-400 px-3 py-1.5 rounded-lg border border-slate-800 hover:border-rose-900/50 transition-colors">
+                    <i class="fa-solid fa-door-open mr-1"></i> Keluar
+                </button>
+            </div>
+
+            <!-- Timer Progress Bar -->
+            <div id="timerBarContainer" class="hidden w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div id="timerBar" class="bg-gradient-to-r from-cyan-500 to-blue-500 h-full w-full transition-all duration-100"></div>
+            </div>
+
+            <!-- Main Question Card -->
+            <div id="questionCard" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl relative">
+                <!-- Question Type Tag -->
+                <div class="flex items-center justify-between mb-4">
+                    <span id="questionCategory" class="px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        Pertanyaan Subnetting
+                    </span>
+                    <span id="questionCount" class="text-xs font-mono text-slate-400">Soal #1</span>
+                </div>
+
+                <!-- Target IP & CIDR Card -->
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-6 text-center my-4 glow-effect">
+                    <span class="text-xs font-bold text-slate-500 tracking-widest uppercase block mb-1">Target Alamat IP / CIDR</span>
+                    <div id="targetIPDisplay" class="font-mono text-3xl md:text-4xl font-extrabold text-cyan-300 tracking-wider">
+                        192.168.1.50/24
+                    </div>
+                </div>
+
+                <!-- Question Prompt -->
+                <h3 id="questionPrompt" class="text-lg md:text-xl font-bold text-center text-white mb-6">
+                    Berapakah Subnet Mask untuk prefix CIDR di atas?
+                </h3>
+
+                <!-- Multiple Choice Options -->
+                <div id="optionsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3.5 mb-4">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Interactive Visualizer Button Toggle -->
+                <div class="mt-6 pt-4 border-t border-slate-800 flex justify-center">
+                    <button onclick="toggleVisualizer()" class="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-2">
+                        <i class="fa-solid fa-eye"></i> <span id="visualizerToggleText">Tampilkan Visualisasi Bit Octet</span>
+                    </button>
+                </div>
+
+                <!-- Visualizer Panel -->
+                <div id="visualizerPanel" class="hidden mt-4 p-4 bg-slate-950 rounded-xl border border-slate-800 font-mono text-xs overflow-x-auto">
+                    <div id="visualizerContent" class="space-y-2">
+                        <!-- Dynamic binary output -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Discussion / Feedback Box (Practice Mode) -->
+            <div id="explanationBox" class="hidden bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl transition-all">
+                <div class="flex items-start gap-3">
+                    <div id="explanationIcon" class="text-2xl mt-0.5"></div>
+                    <div class="flex-1">
+                        <h4 id="explanationTitle" class="font-bold text-sm mb-1"></h4>
+                        <div id="explanationBody" class="text-xs text-slate-300 space-y-1.5 leading-relaxed"></div>
+                        <button onclick="nextQuestion()" class="mt-4 px-5 py-2.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all">
+                            Lanjut Soal Berikutnya <i class="fa-solid fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- SCREEN 3: Game Over Summary -->
+        <section id="resultScreen" class="hidden max-w-xl mx-auto w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl text-center">
+            <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center text-3xl mx-auto mb-4">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+
+            <h2 class="text-2xl md:text-3xl font-extrabold text-white mb-1">Sesi Selesai!</h2>
+            <p id="resultPlayerGreeting" class="text-slate-400 text-sm mb-6">Kerja bagus, Network Engineer!</p>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-3 gap-3 bg-slate-950 p-4 rounded-xl border border-slate-800 mb-6">
+                <div>
+                    <span class="text-[10px] text-slate-500 uppercase font-bold block mb-1">Total Skor</span>
+                    <span id="resultFinalScore" class="font-mono text-2xl font-black text-cyan-400">0</span>
+                </div>
+                <div>
+                    <span class="text-[10px] text-slate-500 uppercase font-bold block mb-1">Akurasi</span>
+                    <span id="resultAccuracy" class="font-mono text-2xl font-black text-emerald-400">0%</span>
+                </div>
+                <div>
+                    <span class="text-[10px] text-slate-500 uppercase font-bold block mb-1">Max Combo</span>
+                    <span id="resultMaxCombo" class="font-mono text-2xl font-black text-amber-400">0x</span>
+                </div>
+            </div>
+
+            <div id="rankBadge" class="inline-block px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm font-bold text-cyan-300 mb-6">
+                Peringkat: <span id="rankTitle">Junior Engineer</span>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button onclick="restartGame()" class="flex-1 py-3 px-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs uppercase tracking-wider transition-all">
+                    <i class="fa-solid fa-rotate-right mr-1.5"></i> Main Lagi
+                </button>
+                <button onclick="returnToMenu()" class="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider transition-all border border-slate-700">
+                    <i class="fa-solid fa-house mr-1.5"></i> Menu Utama
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal Guide & Cheat Sheet -->
+    <div id="helpModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+                <h3 class="font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-book text-cyan-400"></i> Cheat Sheet & Panduan Subnetting CIDR
+                </h3>
+                <button onclick="closeHelpModal()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto space-y-4 text-xs text-slate-300 leading-relaxed font-mono">
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <h4 class="font-bold text-cyan-400 mb-2 font-sans">Rumus Penting Subnetting:</h4>
+                    <ul class="list-disc pl-4 space-y-1 text-slate-300">
+                        <li><b>Jumlah Total IP:</b> 2<sup>(32 - Prefix)</sup></li>
+                        <li><b>Jumlah Usable Host:</b> 2<sup>(32 - Prefix)</sup> - 2</li>
+                        <li><b>Alamat Network:</b> IP Pertama dalam blok subnet</li>
+                        <li><b>Alamat Broadcast:</b> IP Terakhir dalam blok subnet</li>
+                        <li><b>IP Usable Pertama:</b> Alamat Network + 1</li>
+                        <li><b>IP Usable Terakhir:</b> Alamat Broadcast - 1</li>
+                    </ul>
+                </div>
+
+                <div class="border border-slate-800 rounded-xl overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-950 text-cyan-400 font-sans">
+                            <tr>
+                                <th class="p-2 border-b border-slate-800">CIDR</th>
+                                <th class="p-2 border-b border-slate-800">Subnet Mask</th>
+                                <th class="p-2 border-b border-slate-800">Total IP</th>
+                                <th class="p-2 border-b border-slate-800">Usable Host</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/50">
+                            <tr><td class="p-2">/24</td><td class="p-2">255.255.255.0</td><td class="p-2">256</td><td class="p-2">254</td></tr>
+                            <tr><td class="p-2">/25</td><td class="p-2">255.255.255.128</td><td class="p-2">128</td><td class="p-2">126</td></tr>
+                            <tr><td class="p-2">/26</td><td class="p-2">255.255.255.192</td><td class="p-2">64</td><td class="p-2">62</td></tr>
+                            <tr><td class="p-2">/27</td><td class="p-2">255.255.255.224</td><td class="p-2">32</td><td class="p-2">30</td></tr>
+                            <tr><td class="p-2">/28</td><td class="p-2">255.255.255.240</td><td class="p-2">16</td><td class="p-2">14</td></tr>
+                            <tr><td class="p-2">/29</td><td class="p-2">255.255.255.248</td><td class="p-2">8</td><td class="p-2">6</td></tr>
+                            <tr><td class="p-2">/30</td><td class="p-2">255.255.255.252</td><td class="p-2">4</td><td class="p-2">2</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="p-4 border-t border-slate-800 bg-slate-950 text-right">
+                <button onclick="closeHelpModal()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs">
+                    Mengerti, Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State Variables
+        let gameState = {
+            playerName: '',
+            mode: 'practice', // 'practice' or 'timed'
+            difficulty: 'easy', // 'easy', 'medium', 'hard'
+            score: 0,
+            combo: 0,
+            maxCombo: 0,
+            correctCount: 0,
+            totalAnswered: 0,
+            questionIndex: 0,
+            timeLeft: 60,
+            timerInterval: null,
+            soundEnabled: true,
+            currentQuestion: null,
+            isAnswered: false
+        };
+
+        // Web Audio Synthesizer Engine (No external mp3 assets required)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            if (!gameState.soundEnabled) return;
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.15); // E5
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'wrong') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(110, now + 0.2);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else if (type === 'click') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(400, now);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                }
+            } catch (e) {
+                console.log('Audio playback error', e);
+            }
+        }
+
+        function toggleSound() {
+            gameState.soundEnabled = !gameState.soundEnabled;
+            const icon = document.getElementById('soundIcon');
+            if (gameState.soundEnabled) {
+                icon.className = 'fa-solid fa-volume-high';
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-slate-500';
+            }
+        }
+
+        // Convert IP string to 32-bit integer
+        function ipToInt(ip) {
+            return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
+        }
+
+        // Convert 32-bit integer to IP string
+        function intToIp(int) {
+            return [
+                (int >>> 24) & 255,
+                (int >>> 16) & 255,
+                (int >>> 8) & 255,
+                int & 255
+            ].join('.');
+        }
+
+        // Convert 32-bit integer to binary string with octet separators
+        function intToBinaryStr(int) {
+            let binStr = (int >>> 0).toString(2).padStart(32, '0');
+            return `${binStr.slice(0, 8)}.${binStr.slice(8, 16)}.${binStr.slice(16, 24)}.${binStr.slice(24, 32)}`;
+        }
+
+        // Calculate Subnet Mask int from CIDR prefix
+        function cidrToMaskInt(cidr) {
+            return cidr === 0 ? 0 : (0xFFFFFFFF << (32 - cidr)) >>> 0;
+        }
+
+        function generateQuestionData() {
+            // Pick CIDR prefix based on difficulty
+            let minCidr = 24, maxCidr = 30;
+            if (gameState.difficulty === 'medium') {
+                minCidr = 16; maxCidr = 24;
+            } else if (gameState.difficulty === 'hard') {
+                minCidr = 8; maxCidr = 16;
+            }
+
+            const cidr = Math.floor(Math.random() * (maxCidr - minCidr + 1)) + minCidr;
+
+            // Generate Random IP
+            let o1 = 192, o2 = 168, o3 = 1, o4 = 1;
+            if (gameState.difficulty === 'easy') {
+                o1 = 192; o2 = 168;
+                o3 = Math.floor(Math.random() * 254) + 1;
+                o4 = Math.floor(Math.random() * 254) + 1;
+            } else if (gameState.difficulty === 'medium') {
+                o1 = 172;
+                o2 = Math.floor(Math.random() * 16) + 16; // 172.16 - 172.31
+                o3 = Math.floor(Math.random() * 254) + 1;
+                o4 = Math.floor(Math.random() * 254) + 1;
+            } else {
+                o1 = 10;
+                o2 = Math.floor(Math.random() * 254) + 1;
+                o3 = Math.floor(Math.random() * 254) + 1;
+                o4 = Math.floor(Math.random() * 254) + 1;
+            }
+
+            const ipStr = `${o1}.${o2}.${o3}.${o4}`;
+            const ipInt = ipToInt(ipStr);
+            const maskInt = cidrToMaskInt(cidr);
+            const netInt = (ipInt & maskInt) >>> 0;
+            const broadcastInt = (netInt | (~maskInt & 0xFFFFFFFF)) >>> 0;
+            const firstUsableInt = (netInt + 1) >>> 0;
+            const lastUsableInt = (broadcastInt - 1) >>> 0;
+            const totalHosts = Math.pow(2, (32 - cidr));
+            const usableHosts = totalHosts > 2 ? totalHosts - 2 : 0;
+
+            // Types of questions
+            const qTypes = [
+                'SUBNET_MASK',
+                'NETWORK_ADDR',
+                'BROADCAST_ADDR',
+                'FIRST_HOST',
+                'LAST_HOST',
+                'TOTAL_HOSTS'
+            ];
+
+            const type = qTypes[Math.floor(Math.random() * qTypes.length)];
+            let category = "Subnetting Base";
+            let prompt = "";
+            let correctAnswer = "";
+            let explanation = "";
+            let distractors = [];
+
+            switch (type) {
+                case 'SUBNET_MASK':
+                    category = "Subnet Mask";
+                    prompt = `Berapakah Subnet Mask untuk prefix /${cidr}?`;
+                    correctAnswer = intToIp(maskInt);
+                    distractors = [
+                        intToIp(cidrToMaskInt(Math.max(8, cidr - 1))),
+                        intToIp(cidrToMaskInt(Math.min(30, cidr + 1))),
+                        intToIp(cidrToMaskInt(Math.max(8, cidr - 2)))
+                    ];
+                    explanation = `Prefix /${cidr} memiliki ${cidr} bit bernilai 1. Subnet mask-nya adalah <b>${correctAnswer}</b>.`;
+                    break;
+
+                case 'NETWORK_ADDR':
+                    category = "Network Address";
+                    prompt = `Berapakah Alamat Network dari IP ${ipStr}/${cidr}?`;
+                    correctAnswer = intToIp(netInt);
+                    distractors = [
+                        intToIp((netInt + 1) >>> 0),
+                        intToIp(broadcastInt),
+                        intToIp(Math.max(0, netInt - totalHosts))
+                    ];
+                    explanation = `Alamat Network dihitung dari operasi bitwise AND antara IP (${ipStr}) dan Subnet Mask (/${cidr}). Hasilnya: <b>${correctAnswer}</b>.`;
+                    break;
+
+                case 'BROADCAST_ADDR':
+                    category = "Broadcast Address";
+                    prompt = `Berapakah Alamat Broadcast dari IP ${ipStr}/${cidr}?`;
+                    correctAnswer = intToIp(broadcastInt);
+                    distractors = [
+                        intToIp(netInt),
+                        intToIp((broadcastInt - 1) >>> 0),
+                        intToIp((broadcastInt + 2) >>> 0)
+                    ];
+                    explanation = `Alamat Broadcast adalah IP terakhir dalam rentang subnet /${cidr}. Hasilnya: <b>${correctAnswer}</b>.`;
+                    break;
+
+                case 'FIRST_HOST':
+                    category = "Usable Host Pertama";
+                    prompt = `Berapakah IP Host Pertama yang dapat digunakan (Usable) pada ${ipStr}/${cidr}?`;
+                    correctAnswer = intToIp(firstUsableInt);
+                    distractors = [
+                        intToIp(netInt),
+                        intToIp(lastUsableInt),
+                        intToIp((firstUsableInt + 1) >>> 0)
+                    ];
+                    explanation = `Host pertama yang dapat dipakai adalah Alamat Network + 1 (${intToIp(netInt)} + 1 = <b>${correctAnswer}</b>).`;
+                    break;
+
+                case 'LAST_HOST':
+                    category = "Usable Host Terakhir";
+                    prompt = `Berapakah IP Host Terakhir yang dapat digunakan (Usable) pada ${ipStr}/${cidr}?`;
+                    correctAnswer = intToIp(lastUsableInt);
+                    distractors = [
+                        intToIp(broadcastInt),
+                        intToIp(firstUsableInt),
+                        intToIp((lastUsableInt - 1) >>> 0)
+                    ];
+                    explanation = `Host terakhir yang dapat dipakai adalah Alamat Broadcast - 1 (${intToIp(broadcastInt)} - 1 = <b>${correctAnswer}</b>).`;
+                    break;
+
+                case 'TOTAL_HOSTS':
+                    category = "Jumlah Host Usable";
+                    prompt = `Berapa jumlah host yang dapat dialokasikan (Usable Host) pada /${cidr}?`;
+                    correctAnswer = `${usableHosts.toLocaleString()}`;
+                    distractors = [
+                        `${totalHosts.toLocaleString()}`,
+                        `${Math.max(0, usableHosts - 2).toLocaleString()}`,
+                        `${(usableHosts + 4).toLocaleString()}`
+                    ];
+                    explanation = `Rumus Usable Host = 2<sup>(32 - ${cidr})</sup> - 2 = 2<sup>${32 - cidr}</sup> - 2 = <b>${usableHosts.toLocaleString()} host</b>.`;
+                    break;
+            }
+
+            // Ensure distractors are unique & clean
+            distractors = Array.from(new Set(distractors)).filter(d => d !== correctAnswer);
+            while (distractors.length < 3) {
+                distractors.push(`${Math.floor(Math.random() * 254)}.${Math.floor(Math.random() * 254)}.0.1`);
+            }
+
+            // Combine and shuffle options
+            const options = [correctAnswer, ...distractors.slice(0, 3)].sort(() => Math.random() - 0.5);
+
+            return {
+                ipStr,
+                cidr,
+                category,
+                prompt,
+                correctAnswer,
+                options,
+                explanation,
+                ipInt,
+                netInt,
+                broadcastInt,
+                maskInt
+            };
+        }
+
+        function loadMiniLeaderboard() {
+            const scores = JSON.parse(localStorage.getItem('subnet_master_scores') || '[]');
+            const container = document.getElementById('miniLeaderboard');
+            if (scores.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 italic">Belum ada skor tersimpan.</p>';
+                return;
+            }
+
+            container.innerHTML = scores.slice(0, 3).map((item, idx) => `
+                <div class="flex items-center justify-between bg-slate-950 p-2 rounded-lg border border-slate-800">
+                    <span class="font-semibold text-slate-300">#${idx + 1} ${escapeHtml(item.name)}</span>
+                    <span class="font-mono text-cyan-400 font-bold">${item.score} pts</span>
+                </div>
+            `).join('');
+        }
+
+        function clearLeaderboard() {
+            localStorage.removeItem('subnet_master_scores');
+            loadMiniLeaderboard();
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+
+        function startGame(e) {
+            e.preventDefault();
+            playSound('click');
+
+            const nameInput = document.getElementById('playerNameInput').value.trim();
+            if (!nameInput) return;
+
+            gameState.playerName = nameInput;
+            gameState.mode = document.querySelector('input[name="gameMode"]:checked').value;
+            gameState.difficulty = document.querySelector('input[name="difficulty"]:checked').value;
+            gameState.score = 0;
+            gameState.combo = 0;
+            gameState.maxCombo = 0;
+            gameState.correctCount = 0;
+            gameState.totalAnswered = 0;
+            gameState.questionIndex = 0;
+
+            // Show Game Dashboard Screen
+            document.getElementById('welcomeScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            document.getElementById('gameScreen').classList.add('flex');
+
+            // Update Header Display
+            document.getElementById('displayPlayerName').innerText = gameState.playerName;
+            document.getElementById('displayModeBadge').innerText = gameState.mode === 'practice' ? 'Mode Latihan' : 'Tantangan Waktu (60s)';
+
+            if (gameState.mode === 'timed') {
+                document.getElementById('timerContainer').classList.remove('hidden');
+                document.getElementById('timerBarContainer').classList.remove('hidden');
+                gameState.timeLeft = 60;
+                startTimer();
+            } else {
+                document.getElementById('timerContainer').classList.add('hidden');
+                document.getElementById('timerBarContainer').classList.add('hidden');
+            }
+
+            updateStatsUI();
+            nextQuestion();
+        }
+
+        function startTimer() {
+            clearInterval(gameState.timerInterval);
+            gameState.timerInterval = setInterval(() => {
+                gameState.timeLeft--;
+                document.getElementById('timerText').innerText = `${gameState.timeLeft}s`;
+                
+                const percent = (gameState.timeLeft / 60) * 100;
+                document.getElementById('timerBar').style.width = `${percent}%`;
+
+                if (gameState.timeLeft <= 0) {
+                    clearInterval(gameState.timerInterval);
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function updateStatsUI() {
+            document.getElementById('scoreText').innerText = gameState.score;
+            document.getElementById('comboText').innerText = `${gameState.combo}x`;
+        }
+
+        function nextQuestion() {
+            gameState.isAnswered = false;
+            gameState.questionIndex++;
+            document.getElementById('questionCount').innerText = `Soal #${gameState.questionIndex}`;
+
+            // Hide explanation box
+            document.getElementById('explanationBox').classList.add('hidden');
+
+            // Generate New Question
+            const q = generateQuestionData();
+            gameState.currentQuestion = q;
+
+            // Render Card Info
+            document.getElementById('questionCategory').innerText = q.category;
+            document.getElementById('targetIPDisplay').innerText = `${q.ipStr}/${q.cidr}`;
+            document.getElementById('questionPrompt').innerText = q.prompt;
+
+            // Render Option Buttons
+            const optionsGrid = document.getElementById('optionsGrid');
+            optionsGrid.innerHTML = '';
+
+            q.options.forEach((opt) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full py-3.5 px-4 bg-slate-950 border border-slate-800 hover:border-cyan-500 rounded-xl text-left font-mono text-sm md:text-base font-semibold text-slate-200 hover:text-cyan-300 transition-all active:scale-[0.98] flex items-center justify-between group';
+                btn.onclick = () => checkAnswer(opt, btn);
+                btn.innerHTML = `
+                    <span>${opt}</span>
+                    <i class="fa-regular fa-circle text-slate-600 group-hover:text-cyan-400"></i>
+                `;
+                optionsGrid.appendChild(btn);
+            });
+
+            // Update Visualizer Panel
+            renderVisualizer(q);
+        }
+
+        function renderVisualizer(q) {
+            const container = document.getElementById('visualizerContent');
+            const ipBin = intToBinaryStr(q.ipInt);
+            const maskBin = intToBinaryStr(q.maskInt);
+            const netBin = intToBinaryStr(q.netInt);
+
+            container.innerHTML = `
+                <div><span class="text-slate-500">IP (Bin)   :</span> <span class="text-cyan-400">${ipBin}</span></div>
+                <div><span class="text-slate-500">Mask (Bin) :</span> <span class="text-amber-400">${maskBin}</span></div>
+                <div class="pt-1 border-t border-slate-800"><span class="text-slate-500">Net (Bin)  :</span> <span class="text-emerald-400">${netBin}</span></div>
+            `;
+        }
+
+        function toggleVisualizer() {
+            playSound('click');
+            const panel = document.getElementById('visualizerPanel');
+            const text = document.getElementById('visualizerToggleText');
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                text.innerText = "Sembunyikan Visualisasi Bit Octet";
+            } else {
+                panel.classList.add('hidden');
+                text.innerText = "Tampilkan Visualisasi Bit Octet";
+            }
+        }
+
+        function checkAnswer(selectedOpt, btnElement) {
+            if (gameState.isAnswered) return;
+            gameState.isAnswered = true;
+            gameState.totalAnswered++;
+
+            const q = gameState.currentQuestion;
+            const isCorrect = (selectedOpt === q.correctAnswer);
+
+            const optionsGrid = document.getElementById('optionsGrid');
+            const buttons = optionsGrid.querySelectorAll('button');
+
+            // Highlight buttons
+            buttons.forEach(b => {
+                const text = b.querySelector('span').innerText;
+                b.disabled = true;
+                if (text === q.correctAnswer) {
+                    b.className = 'w-full py-3.5 px-4 bg-emerald-950/80 border-2 border-emerald-500 rounded-xl text-left font-mono text-sm md:text-base font-semibold text-emerald-200 flex items-center justify-between';
+                    b.querySelector('i').className = 'fa-solid fa-circle-check text-emerald-400';
+                } else if (b === btnElement && !isCorrect) {
+                    b.className = 'w-full py-3.5 px-4 bg-rose-950/80 border-2 border-rose-500 rounded-xl text-left font-mono text-sm md:text-base font-semibold text-rose-200 flex items-center justify-between animate-shake';
+                    b.querySelector('i').className = 'fa-solid fa-circle-xmark text-rose-400';
+                } else {
+                    b.className = 'w-full py-3.5 px-4 bg-slate-950/50 border border-slate-800/50 rounded-xl text-left font-mono text-sm md:text-base font-semibold text-slate-600 flex items-center justify-between opacity-50';
+                }
+            });
+
+            if (isCorrect) {
+                playSound('correct');
+                gameState.correctCount++;
+                gameState.combo++;
+                if (gameState.combo > gameState.maxCombo) {
+                    gameState.maxCombo = gameState.combo;
+                }
+                
+                // Score calculation with multiplier
+                const basePoints = 100;
+                const bonus = (gameState.combo - 1) * 20;
+                gameState.score += (basePoints + bonus);
+            } else {
+                playSound('wrong');
+                gameState.combo = 0;
+            }
+
+            updateStatsUI();
+
+            // Display Explanation Box (Practice mode or after answer in Timed mode)
+            const explanationBox = document.getElementById('explanationBox');
+            const expTitle = document.getElementById('explanationTitle');
+            const expIcon = document.getElementById('explanationIcon');
+            const expBody = document.getElementById('explanationBody');
+
+            explanationBox.classList.remove('hidden');
+
+            if (isCorrect) {
+                explanationBox.className = 'bg-emerald-950/30 border border-emerald-500/30 rounded-2xl p-5 shadow-xl';
+                expIcon.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-400"></i>';
+                expTitle.className = 'font-bold text-sm text-emerald-300 mb-1';
+                expTitle.innerText = 'Jawaban Tepat!';
+            } else {
+                explanationBox.className = 'bg-rose-950/30 border border-rose-500/30 rounded-2xl p-5 shadow-xl';
+                expIcon.innerHTML = '<i class="fa-solid fa-circle-xmark text-rose-400"></i>';
+                expTitle.className = 'font-bold text-sm text-rose-300 mb-1';
+                expTitle.innerText = `Kurang Tepat! Jawaban Benar: ${q.correctAnswer}`;
+            }
+
+            expBody.innerHTML = q.explanation;
+
+            // In timed mode, automatically advance after short delay
+            if (gameState.mode === 'timed') {
+                setTimeout(() => {
+                    if (gameState.timeLeft > 0) {
+                        nextQuestion();
+                    }
+                }, 1600);
+            }
+        }
+
+        function endGame() {
+            clearInterval(gameState.timerInterval);
+
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('flex');
+            document.getElementById('resultScreen').classList.remove('hidden');
+
+            document.getElementById('resultPlayerGreeting').innerText = `Hebat sekali, ${gameState.playerName}!`;
+            document.getElementById('resultFinalScore').innerText = gameState.score;
+
+            const accuracy = gameState.totalAnswered > 0 
+                ? Math.round((gameState.correctCount / gameState.totalAnswered) * 100) 
+                : 0;
+            
+            document.getElementById('resultAccuracy').innerText = `${accuracy}%`;
+            document.getElementById('resultMaxCombo').innerText = `${gameState.maxCombo}x`;
+
+            // Calculate Rank Title
+            let rank = 'Junior NetEng';
+            if (gameState.score >= 1500) rank = 'CIDR Master Architect';
+            else if (gameState.score >= 1000) rank = 'Senior Network Specialist';
+            else if (gameState.score >= 500) rank = 'Network Administrator';
+
+            document.getElementById('rankTitle').innerText = rank;
+
+            // Save to LocalStorage
+            saveScore(gameState.playerName, gameState.score);
+        }
+
+        function saveScore(name, score) {
+            const scores = JSON.parse(localStorage.getItem('subnet_master_scores') || '[]');
+            scores.push({ name, score, date: new Date().toLocaleDateString() });
+            scores.sort((a, b) => b.score - a.score);
+            localStorage.setItem('subnet_master_scores', JSON.stringify(scores.slice(0, 10)));
+            loadMiniLeaderboard();
+        }
+
+        function restartGame() {
+            playSound('click');
+            const fakeEvent = { preventDefault: () => {} };
+            startGame(fakeEvent);
+        }
+
+        function returnToMenu() {
+            playSound('click');
+            clearInterval(gameState.timerInterval);
+            document.getElementById('resultScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('flex');
+            document.getElementById('welcomeScreen').classList.remove('hidden');
+        }
+
+        function confirmExit() {
+            playSound('click');
+            if (confirm("Apakah kamu yakin ingin keluar dari arena permainan?")) {
+                returnToMenu();
+            }
+        }
+
+        function openHelpModal() {
+            playSound('click');
+            document.getElementById('helpModal').classList.remove('hidden');
+        }
+
+        function closeHelpModal() {
+            playSound('click');
+            document.getElementById('helpModal').classList.add('hidden');
+        }
+
+        // Initialize on page load
+        window.onload = function() {
+            loadMiniLeaderboard();
+        };
+    </script>
+</body>
+</html>
